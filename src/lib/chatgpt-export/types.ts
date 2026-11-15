@@ -61,6 +61,7 @@ export interface Conversation {
 
 export type ImportErrorCode =
   | "FILE_TOO_LARGE"
+  | "READ_FAILED"
   | "INVALID_ZIP"
   | "TOO_MANY_ENTRIES"
   | "NOT_FOUND"

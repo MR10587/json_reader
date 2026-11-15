@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { importChatGptExport, parseConversations, type ImportResult } from "../index";
+import { constants } from "node:buffer";
+import { describe, expect, it, vi } from "vitest";
+import { DEFAULT_LIMITS, importChatGptExport, parseConversations, type ImportResult } from "../index";
 import { buildZip, exportZip, makeConversation, makeMapping, text } from "./fixtures";
 
 function expectOk(result: ImportResult) {
@@ -103,6 +104,36 @@ describe("importChatGptExport — size limits", () => {
     expectError(await importChatGptExport(zip, { limits: { maxJsonBytes: 5_000 } }), "CONTENT_TOO_LARGE");
   });
 
+  it("default JSON limit fits within the engine's maximum string length", () => {
+    expect(DEFAULT_LIMITS.maxJsonBytes).toBeLessThanOrEqual(constants.MAX_STRING_LENGTH);
+  });
+
+  it("returns CONTENT_TOO_LARGE instead of throwing when text decoding fails", async () => {
+    const zip = await exportZip([makeConversation()]);
+    vi.stubGlobal(
+      "TextDecoder",
+      class {
+        decode(): string {
+          throw new RangeError("Invalid string length");
+        }
+      },
+    );
+    try {
+      expectError(await importChatGptExport(zip), "CONTENT_TOO_LARGE");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("returns READ_FAILED when the file cannot be read", async () => {
+    class UnreadableBlob extends Blob {
+      override arrayBuffer(): Promise<ArrayBuffer> {
+        return Promise.reject(new Error("NotReadableError"));
+      }
+    }
+    expectError(await importChatGptExport(new UnreadableBlob(["PK"])), "READ_FAILED");
+  });
+
   it("rejects archives with too many entries", async () => {
     const files: Record<string, string> = { "conversations.json": "[]" };
     for (let i = 0; i < 20; i++) files[`file-${i}.txt`] = "x";
@@ -156,6 +187,16 @@ describe("parseConversations — conversation structure", () => {
     const result = expectOk(parseConversations([makeConversation({ mapping, current_node: "u1" })]));
     expect(result.conversations[0].messages.map((m) => m.id)).toEqual(["u1"]);
     expect(result.warnings[0].message).toMatch(/missing node/);
+  });
+
+  it("never resolves node ids to inherited Object.prototype members", () => {
+    const mapping = JSON.parse(
+      '{"u1": {"id": "u1", "parent": "__proto__", "children": ["constructor", "toString"], "message": {"id": "u1", "author": {"role": "user"}}}}',
+    ) as unknown;
+    for (const current of ["__proto__", "constructor", "hasOwnProperty", undefined]) {
+      const result = expectOk(parseConversations([makeConversation({ mapping, current_node: current })]));
+      expect(result.conversations[0].messages.map((m) => m.id)).toEqual(["u1"]);
+    }
   });
 
   it("handles missing title, ids, timestamps and mapping", () => {

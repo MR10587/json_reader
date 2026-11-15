@@ -13,6 +13,16 @@ export interface ThreadResult {
   notes: string[];
 }
 
+/**
+ * Own-property lookup only, so ids like "__proto__" or "constructor" never
+ * resolve to inherited Object.prototype members.
+ */
+function getNode(mapping: RawObject, id: string): RawObject | null {
+  if (!Object.hasOwn(mapping, id)) return null;
+  const node = mapping[id];
+  return isObject(node) ? node : null;
+}
+
 function parentId(node: RawObject): string | null {
   return asString(node.parent);
 }
@@ -34,8 +44,8 @@ function walkUp(mapping: RawObject, leafId: string, notes: string[]): RawObject[
       break;
     }
     seen.add(id);
-    const node = mapping[id];
-    if (!isObject(node)) {
+    const node = getNode(mapping, id);
+    if (!node) {
       if (path.length > 0) notes.push(`Message tree references missing node "${id}".`);
       break;
     }
@@ -47,22 +57,27 @@ function walkUp(mapping: RawObject, leafId: string, notes: string[]): RawObject[
 
 /** Fallback leaf when `current_node` is missing: follow the last child from a root. */
 function findFallbackLeaf(mapping: RawObject): string | null {
-  const ids = Object.keys(mapping).filter((id) => isObject(mapping[id]));
-  if (ids.length === 0) return null;
+  const nodes = new Map<string, RawObject>();
+  for (const id of Object.keys(mapping)) {
+    const node = getNode(mapping, id);
+    if (node) nodes.set(id, node);
+  }
+  if (nodes.size === 0) return null;
 
-  const root =
-    ids.find((id) => {
-      const p = parentId(mapping[id] as RawObject);
-      return p === null || !isObject(mapping[p]);
-    }) ?? ids[0];
+  let root: string | null = null;
+  for (const [id, node] of nodes) {
+    const p = parentId(node);
+    if (p === null || !nodes.has(p)) {
+      root = id;
+      break;
+    }
+  }
+  let current = root ?? nodes.keys().next().value!;
 
   const seen = new Set<string>();
-  let current = root;
   for (;;) {
     seen.add(current);
-    const children = childIds(mapping[current] as RawObject).filter(
-      (c) => isObject(mapping[c]) && !seen.has(c),
-    );
+    const children = childIds(nodes.get(current)!).filter((c) => nodes.has(c) && !seen.has(c));
     const next = children[children.length - 1];
     if (next === undefined) return current;
     current = next;
@@ -77,7 +92,7 @@ export function linearizeThread(mapping: unknown, currentNode: unknown): ThreadR
   }
 
   let leaf = asString(currentNode);
-  if (leaf === null || !isObject(mapping[leaf])) {
+  if (leaf === null || !getNode(mapping, leaf)) {
     if (leaf !== null) notes.push("current_node does not exist in mapping; using fallback branch.");
     leaf = findFallbackLeaf(mapping);
   }

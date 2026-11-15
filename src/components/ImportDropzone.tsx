@@ -20,7 +20,16 @@ export function ImportDropzone() {
     event.target.value = ""; // allow re-selecting the same file
     if (!file) return;
     setState({ status: "loading", fileName: file.name });
-    const result = await importChatGptExport(file);
+    let result: ImportResult;
+    try {
+      result = await importChatGptExport(file);
+    } catch {
+      // The importer is designed not to throw; this guards against e.g. out-of-memory errors.
+      result = {
+        ok: false,
+        error: { code: "READ_FAILED", message: "Something went wrong while reading this file. It may be too large for this device." },
+      };
+    }
     setState({ status: "done", fileName: file.name, result });
   }
 

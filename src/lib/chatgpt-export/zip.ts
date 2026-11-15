@@ -68,9 +68,16 @@ export async function extractConversationsJson(
     return fail("INVALID_ZIP", "The selected file is empty.");
   }
 
+  let binary: ArrayBuffer | Uint8Array;
+  try {
+    binary = await toBinary(input);
+  } catch {
+    return fail("READ_FAILED", "The selected file could not be read. Please try selecting it again.");
+  }
+
   let zip: JSZip;
   try {
-    zip = await JSZip.loadAsync(await toBinary(input));
+    zip = await JSZip.loadAsync(binary);
   } catch {
     return fail(
       "INVALID_ZIP",
@@ -111,5 +118,10 @@ export async function extractConversationsJson(
   }
   if (bytes.byteLength > limits.maxJsonBytes) return tooLarge(bytes.byteLength);
 
-  return { ok: true, text: new TextDecoder("utf-8").decode(bytes), path: entry.name };
+  try {
+    return { ok: true, text: new TextDecoder("utf-8").decode(bytes), path: entry.name };
+  } catch {
+    // e.g. RangeError when the text exceeds the engine's maximum string length.
+    return tooLarge(bytes.byteLength);
+  }
 }

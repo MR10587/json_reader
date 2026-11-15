@@ -11,11 +11,12 @@ export interface ImportLimits {
 
 /**
  * Defaults are bounded by browser memory: JSZip loads the whole archive into
- * memory, and V8 caps string length at roughly 512 MiB.
+ * memory, and V8 caps string length at 2^29 - 24 characters (just under
+ * 512 MiB). maxJsonBytes stays below that so the decoded text always fits.
  */
 export const DEFAULT_LIMITS: ImportLimits = {
   maxZipBytes: 1024 * MiB,
-  maxJsonBytes: 512 * MiB,
+  maxJsonBytes: 500 * MiB,
   maxEntries: 50_000,
 };
 
