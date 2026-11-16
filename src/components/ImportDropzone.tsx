@@ -1,82 +1,74 @@
 "use client";
 
-import { useState, type ChangeEvent } from "react";
-import { importChatGptExport, type ImportResult } from "@/lib/chatgpt-export";
+import { useId, useState, type ChangeEvent, type DragEvent } from "react";
 
-type State =
-  | { status: "idle" }
-  | { status: "loading"; fileName: string }
-  | { status: "done"; fileName: string; result: ImportResult };
-
-/**
- * Lets the user pick their ChatGPT export ZIP. The file is read and parsed
- * in the browser; results live only in React state (no upload, no storage).
- */
-export function ImportDropzone() {
-  const [state, setState] = useState<State>({ status: "idle" });
-
-  async function handleChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = ""; // allow re-selecting the same file
-    if (!file) return;
-    setState({ status: "loading", fileName: file.name });
-    let result: ImportResult;
-    try {
-      result = await importChatGptExport(file);
-    } catch {
-      // The importer is designed not to throw; this guards against e.g. out-of-memory errors.
-      result = {
-        ok: false,
-        error: { code: "READ_FAILED", message: "Something went wrong while reading this file. It may be too large for this device." },
-      };
-    }
-    setState({ status: "done", fileName: file.name, result });
-  }
-
-  return (
-    <section className="w-full space-y-4">
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 p-8 text-center hover:border-zinc-500 dark:border-zinc-700">
-        <span className="font-medium">Select your ChatGPT export (.zip)</span>
-        <span className="text-sm text-zinc-500">Processed on your device. Nothing is uploaded.</span>
-        <input
-          type="file"
-          accept=".zip,application/zip"
-          className="sr-only"
-          onChange={handleChange}
-          disabled={state.status === "loading"}
-        />
-      </label>
-
-      {state.status === "loading" && <p className="text-sm">Reading {state.fileName}…</p>}
-      {state.status === "done" && <ImportSummary result={state.result} />}
-    </section>
-  );
+interface ImportDropzoneProps {
+  onFile: (file: File) => void;
+  disabled?: boolean;
+  compact?: boolean;
 }
 
-function ImportSummary({ result }: { result: ImportResult }) {
-  if (!result.ok) {
-    return (
-      <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">
-        {result.error.message}
-      </p>
-    );
+/**
+ * File picker and drop target. Parsing lives in ChatArchiveProvider, so this
+ * component only hands the selected ZIP to the existing Stage 1 importer.
+ */
+export function ImportDropzone({ onFile, disabled = false, compact = false }: ImportDropzoneProps) {
+  const inputId = useId();
+  const [dragActive, setDragActive] = useState(false);
+
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // allow re-selecting the same file
+    if (file) onFile(file);
   }
 
-  const { conversations, warnings } = result;
+  function handleDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setDragActive(false);
+    if (disabled) return;
+    const file = event.dataTransfer.files?.[0];
+    if (file) onFile(file);
+  }
+
   return (
-    <div className="space-y-2">
-      <p className="text-sm">
-        Imported {conversations.length} conversation{conversations.length === 1 ? "" : "s"}
-        {warnings.length > 0 && ` (${warnings.length} warning${warnings.length === 1 ? "" : "s"})`}.
-      </p>
-      <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-        {conversations.map((c, i) => (
-          <li key={`${c.id}-${i}`} className="flex justify-between gap-4 px-3 py-2 text-sm">
-            <span className="truncate">{c.title}</span>
-            <span className="shrink-0 text-zinc-500">{c.messages.length} msgs</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <label
+      htmlFor={inputId}
+      onDragEnter={(event) => {
+        event.preventDefault();
+        if (!disabled) setDragActive(true);
+      }}
+      onDragOver={(event) => {
+        event.preventDefault();
+        if (!disabled) setDragActive(true);
+      }}
+      onDragLeave={() => setDragActive(false)}
+      onDrop={handleDrop}
+      className={`flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-center transition ${
+        compact ? "px-5 py-7" : "px-6 py-10 sm:px-10 sm:py-12"
+      } ${
+        dragActive
+          ? "border-accent bg-accent-soft"
+          : "border-border-strong bg-surface hover:border-accent hover:bg-surface-muted"
+      } ${disabled ? "pointer-events-none opacity-60" : ""}`}
+    >
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5" aria-hidden="true">
+          <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" strokeLinecap="round" />
+        </svg>
+      </span>
+      <span className="font-medium text-foreground">Select your ChatGPT export</span>
+      <span className="text-sm text-muted-foreground">
+        Drop a .zip here or click to browse. Processed on your device.
+      </span>
+      <input
+        id={inputId}
+        type="file"
+        accept=".zip,application/zip"
+        className="sr-only"
+        onChange={handleChange}
+        disabled={disabled}
+      />
+    </label>
   );
 }

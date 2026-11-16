@@ -20,6 +20,51 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Plans and entitlements
+
+ChatArchive has a Free/Premium entitlement architecture. Pricing and feature
+definitions live in `src/lib/billing/config.ts`.
+
+- **Free:** conversation viewer, import, search/filters, settings, and summary
+  analytics.
+- **Premium:** advanced analytics at `/analytics/advanced` (monthly and weekday
+  charts, busiest weekday, top month, longest conversations, and detailed
+  coverage notes).
+
+### Security model
+
+- The server reads a signed, HttpOnly `chatarchive_entitlement` cookie and
+  verifies its HMAC signature and expiry on every request.
+- The cookie stores only the plan id, timestamps, and source. Feature access is
+  derived from the plan on the server.
+- Missing, malformed, expired, or tampered cookies resolve to Free.
+- Client components receive only a narrow resolved entitlement object. Premium
+  access is never granted from localStorage or a client-side boolean.
+- Development-mock cookies are rejected unless the runtime is development/test
+  and `CHATARCHIVE_ENABLE_DEV_MOCKS=true`.
+- Every runtime fails closed to Free when `ENTITLEMENT_SIGNING_SECRET` is
+  missing or shorter than 16 characters.
+
+### Development mock controls
+
+Set a local `ENTITLEMENT_SIGNING_SECRET` (at least 16 characters) and
+`CHATARCHIVE_ENABLE_DEV_MOCKS=true`, then open `/upgrade` with `npm run dev` to
+find controls that simulate Premium for 30 days or 2 minutes, set a correctly
+signed but expired entitlement, or reset to Free. No payment is processed.
+These controls and server actions are available only in development/test
+runtimes with the explicit opt-in. There is no real checkout yet; a future
+provider can replace the mock issuer while keeping the same server-side
+verification seam.
+
+### Verification
+
+```bash
+npm test
+npm run lint
+npm run typecheck
+npm run build
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -10,13 +10,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "fixtures:sample": "node scripts/generate-sample-export.mjs"
+    "fixtures:sample": "node scripts/generate-sample-export.mjs",
+    "fixtures:large": "node scripts/generate-large-export.mjs"
   },
   "dependencies": {
     "jszip": "^3.10.2",
     "next": "16.4.6",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",

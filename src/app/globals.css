@@ -1,26 +1,440 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6f7f9;
+  --foreground: #18181b;
+  --surface: #ffffff;
+  --surface-muted: #f1f3f5;
+  --sidebar: #fbfbfc;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --muted-foreground: #6b7280;
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+  --accent-soft: #eef2ff;
+  --danger: #b91c1c;
+  --danger-soft: #fef2f2;
+  --warning: #92400e;
+  --warning-soft: #fffbeb;
+  --code-bg: #f8fafc;
+  --code-header: #f1f5f9;
+  --code-foreground: #24292f;
+
+  --hljs-comment: #6a737d;
+  --hljs-keyword: #cf222e;
+  --hljs-number: #0550ae;
+  --hljs-string: #0a3069;
+  --hljs-title: #8250df;
+  --hljs-built-in: #953800;
+  --hljs-attr: #0550ae;
+  --hljs-meta: #8250df;
+  --hljs-addition: #116329;
+  --hljs-addition-bg: #dafbe1;
+  --hljs-deletion: #82071e;
+  --hljs-deletion-bg: #ffebe9;
+}
+
+[data-theme="dark"] {
+  --background: #0b0d12;
+  --foreground: #e7e9ee;
+  --surface: #12151c;
+  --surface-muted: #191d26;
+  --sidebar: #0f1218;
+  --border: #252a35;
+  --border-strong: #333a48;
+  --muted-foreground: #9aa3b2;
+  --accent: #818cf8;
+  --accent-foreground: #111321;
+  --accent-soft: #1c2340;
+  --danger: #fca5a5;
+  --danger-soft: #2a1518;
+  --warning: #fcd34d;
+  --warning-soft: #2a2113;
+  --code-bg: #0d1117;
+  --code-header: #161b22;
+  --code-foreground: #c9d1d9;
+
+  --hljs-comment: #8b949e;
+  --hljs-keyword: #ff7b72;
+  --hljs-number: #79c0ff;
+  --hljs-string: #a5d6ff;
+  --hljs-title: #d2a8ff;
+  --hljs-built-in: #ffa657;
+  --hljs-attr: #79c0ff;
+  --hljs-meta: #d2a8ff;
+  --hljs-addition: #aff5b4;
+  --hljs-addition-bg: #033a16;
+  --hljs-deletion: #ffdcd7;
+  --hljs-deletion-bg: #67060c;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-sidebar: var(--sidebar);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-code-bg: var(--code-bg);
+  --color-code-header: var(--code-header);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--foreground);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+}
+
+/* --------------------------------------------------------------------------
+   Markdown
+   -------------------------------------------------------------------------- */
+
+.markdown {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown p {
+  margin: 0.75rem 0;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4 {
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.markdown h1 {
+  font-size: 1.3rem;
+}
+
+.markdown h2 {
+  font-size: 1.15rem;
+}
+
+.markdown h3 {
+  font-size: 1rem;
+}
+
+.markdown h4 {
+  font-size: 0.9375rem;
+}
+
+.markdown ul,
+.markdown ol {
+  margin: 0.75rem 0;
+  padding-left: 1.4rem;
+}
+
+.markdown ul {
+  list-style: disc;
+}
+
+.markdown ol {
+  list-style: decimal;
+}
+
+.markdown li {
+  margin: 0.25rem 0;
+}
+
+.markdown li > ul,
+.markdown li > ol {
+  margin: 0.25rem 0;
+}
+
+.markdown li::marker {
+  color: var(--muted-foreground);
+}
+
+.markdown a {
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.markdown a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.markdown strong {
+  font-weight: 650;
+}
+
+.markdown del {
+  opacity: 0.7;
+}
+
+.markdown blockquote {
+  margin: 0.9rem 0;
+  border-left: 3px solid var(--border-strong);
+  padding-left: 0.9rem;
+  color: var(--muted-foreground);
+}
+
+.markdown blockquote p {
+  margin: 0.35rem 0;
+}
+
+.markdown hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.markdown :not(pre) > code {
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  padding: 0.1rem 0.3rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.86em;
+}
+
+.markdown-table-wrap {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.markdown th,
+.markdown td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown th {
+  background: var(--surface-muted);
+  font-weight: 600;
+}
+
+.markdown tr:last-child td {
+  border-bottom: 0;
+}
+
+.markdown input[type="checkbox"] {
+  margin-right: 0.45rem;
+  accent-color: var(--accent);
+}
+
+.markdown .footnotes {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+
+/* --------------------------------------------------------------------------
+   Code blocks
+   -------------------------------------------------------------------------- */
+
+.code-block {
+  margin: 1rem 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--code-bg);
+}
+
+.code-block-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--code-header);
+  padding: 0.3rem 0.55rem 0.3rem 0.8rem;
+}
+
+.code-block pre {
+  margin: 0;
+  overflow-x: auto;
+  padding: 0.9rem 1rem;
+  background: transparent;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+
+.code-block code {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+.hljs {
+  color: var(--code-foreground);
+  background: transparent;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--hljs-comment);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  color: var(--hljs-keyword);
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag .hljs-attr {
+  color: var(--hljs-number);
+}
+
+.hljs-string,
+.hljs-doctag {
+  color: var(--hljs-string);
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id,
+.hljs-title.class_,
+.hljs-title.function_ {
+  color: var(--hljs-title);
+}
+
+.hljs-type,
+.hljs-class .hljs-title {
+  color: var(--hljs-title);
+}
+
+.hljs-built_in,
+.hljs-builtin-name {
+  color: var(--hljs-built-in);
+}
+
+.hljs-attr,
+.hljs-attribute {
+  color: var(--hljs-attr);
+}
+
+.hljs-regexp,
+.hljs-link,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--hljs-number);
+}
+
+.hljs-meta,
+.hljs-meta .hljs-keyword {
+  color: var(--hljs-meta);
+}
+
+.hljs-addition {
+  color: var(--hljs-addition);
+  background: var(--hljs-addition-bg);
+}
+
+.hljs-deletion {
+  color: var(--hljs-deletion);
+  background: var(--hljs-deletion-bg);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 650;
+}
+
+/* --------------------------------------------------------------------------
+   Details and motion
+   -------------------------------------------------------------------------- */
+
+.details-chevron {
+  transition: transform 150ms ease;
+}
+
+details[open] > summary .details-chevron {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
